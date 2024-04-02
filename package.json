@@ -1,6 +1,6 @@
 {
-  "name": "@etherspot/prime-sdk",
-  "version": "1.6.4",
+  "name": "@vukhaihoan/prime-sdk",
+  "version": "1.0.0",
   "description": "Etherspot Prime (Account Abstraction) SDK",
   "keywords": [
     "ether",
