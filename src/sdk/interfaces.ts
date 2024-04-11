@@ -5,6 +5,7 @@ import { StateStorage } from './state';
 export enum PaymasterType {
   BICONOMY = 'biconomy',
   PIMLICO = 'pimlico',
+  MULTITOKEN = 'multitoken',
 }
 
 export interface PaymasterApi {

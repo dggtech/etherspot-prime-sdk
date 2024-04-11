@@ -178,7 +178,7 @@ export class PrimeSdk {
     }
 
     if (paymasterDetails?.url) {
-      if (paymasterDetails?.type === PaymasterType.PIMLICO) {
+      if (paymasterDetails?.type === PaymasterType.PIMLICO || paymasterDetails?.type === PaymasterType.MULTITOKEN) {
         const verifyingPaymasterAPI = new VerifyingPaymasterAPI(
           paymasterDetails.url,
           this.etherspotWallet.entryPointAddress,
