@@ -1,39 +1,38 @@
-import { NetworkConfig } from ".";
+import { NetworkConfig } from '.';
 
 export enum NetworkNames {
-  BaseSepolia = 'baseSepolia',
-  Sepolia = 'sepolia',
-  Optimism = 'optimism',
-  Polygon = 'polygon',
-  Arbitrum = 'arbitrum',
-  ArbitrumSepolia = 'arbitrumSepolia',
+  BaseSepolia = 'baseSepolia', // base testnet
+  Sepolia = 'sepolia', // ethereum testnet
+  Optimism = 'optimism', // optimism mainnet
+  Polygon = 'polygon', // polygon mainnet
+  Arbitrum = 'arbitrum', // arbitrum mainnet
+  ArbitrumSepolia = 'arbitrumSepolia', // arbitrum testnet
   Chiado = 'chiado',
   Fuse = 'fuse',
   FuseSparknet = 'fuseSparknet',
   Gnosis = 'gnosis',
   KromaTestnet = 'kromaTestnet',
-  Mainnet = 'mainnet',
-  OptimismSepolia = 'optimismSepolia',
+  Mainnet = 'mainnet', // ethereum mainnet
+  OptimismSepolia = 'optimismSepolia', // optimism testnet
   Rootstock = 'rootstock',
   RootstockTestnet = 'rootstockTestnet',
   VerseTestnet = 'verseTestnet',
   Mantle = 'Mantle',
   MantleSepolia = 'MantleSepolia',
-  Avalanche = 'avalanche',
-  Base = 'base',
-  Bsc = 'bsc',
-  BscTestnet = 'bscTestnet',
-  Fuji = 'fuji',
-  Linea = 'linea',
-  LineaTestnet = 'lineaTestnet',
+  Avalanche = 'avalanche', // avalanche mainnet
+  Base = 'base', // base mainnet
+  Bsc = 'bsc', // bsc mainnet
+  BscTestnet = 'bscTestnet', // bsc testnet
+  Fuji = 'fuji', // avalanche testnet
+  Linea = 'linea', // linea mainnet
+  LineaTestnet = 'lineaTestnet', // linea testnet
   FlareTestnet = 'flareTestnet',
   Flare = 'flare',
   ScrollSepolia = 'scrollSepolia',
   Scroll = 'scroll',
-  Ancient8Testnet = 'ancient8Testnet',
-  Ancient8 = 'ancient8',
-  Amoy = 'amoy',
-
+  Ancient8Testnet = 'ancient8Testnet', // ancient8 testnet
+  Ancient8 = 'ancient8', // ancient8 mainnet
+  Amoy = 'amoy', // polygon testnet
 }
 
 export const SupportedNetworks =

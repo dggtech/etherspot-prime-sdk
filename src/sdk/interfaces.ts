@@ -1,15 +1,24 @@
+import { SponsorUserOperationDto } from '@biconomy/paymaster';
 import { BundlerProviderLike } from './bundler';
 import { StateStorage } from './state';
 
+export enum PaymasterType {
+  BICONOMY = 'biconomy',
+  PIMLICO = 'pimlico',
+  MULTITOKEN = 'multitoken',
+}
+
 export interface PaymasterApi {
   url: string;
+  type?: PaymasterType;
   context?: any;
+  paymasterServiceData?: SponsorUserOperationDto;
 }
 
 export enum Factory {
   ZERO_DEV = 'zeroDev',
   ETHERSPOT = 'etherspot',
-  SIMPLE_ACCOUNT = 'simpleAccount'
+  SIMPLE_ACCOUNT = 'simpleAccount',
 }
 
 export interface SdkOptions {

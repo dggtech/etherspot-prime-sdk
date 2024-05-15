@@ -1,5 +1,5 @@
 {
-  "name": "@etherspot/prime-sdk",
+  "name": "@dgpub/prime-sdk",
   "version": "1.8.1",
   "description": "Etherspot Prime (Account Abstraction) SDK",
   "keywords": [
@@ -66,6 +66,7 @@
   },
   "dependencies": {
     "@apollo/client": "3.8.7",
+    "@biconomy/paymaster": "^4.1.1",
     "@lifi/sdk": "2.5.0",
     "@thehubbleproject/bls": "0.5.1",
     "@walletconnect/universal-provider": "2.10.0",

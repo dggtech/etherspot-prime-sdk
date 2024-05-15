@@ -7,7 +7,7 @@ import {
   WalletConnect2WalletProvider,
   WalletProviderLike
 } from './wallet';
-import { Factory, PaymasterApi, SdkOptions } from './interfaces';
+import { Factory, PaymasterApi, PaymasterType, SdkOptions } from './interfaces';
 import { Network } from "./network";
 import { BatchUserOpsRequest, Exception, getGasFee, onRampApiKey, openUrl, UserOpsRequest } from "./common";
 import { BigNumber, BigNumberish, ethers, providers, TypedDataField } from 'ethers';
@@ -20,6 +20,7 @@ import { ZeroDevWalletAPI } from './base/ZeroDevWalletAPI';
 import { SimpleAccountAPI } from './base/SimpleAccountWalletAPI';
 import { ErrorHandler } from './errorHandler/errorHandler.service';
 import { EtherspotBundler } from './bundler';
+import { BiconomyPaymasterAPI } from './base/BiconomyPaymasterAPI';
 
 /**
  * Prime-Sdk
@@ -177,8 +178,20 @@ export class PrimeSdk {
     }
 
     if (paymasterDetails?.url) {
-      const paymasterAPI = new VerifyingPaymasterAPI(paymasterDetails.url, this.etherspotWallet.entryPointAddress, paymasterDetails.context ?? {})
-      this.etherspotWallet.setPaymasterApi(paymasterAPI)
+      if (paymasterDetails?.type === PaymasterType.PIMLICO || paymasterDetails?.type === PaymasterType.MULTITOKEN) {
+        const verifyingPaymasterAPI = new VerifyingPaymasterAPI(
+          paymasterDetails.url,
+          this.etherspotWallet.entryPointAddress,
+          paymasterDetails.context ?? {},
+        );
+        this.etherspotWallet.setPaymasterApi(verifyingPaymasterAPI);
+      } else {
+        const biconomyPaymasterAPI = new BiconomyPaymasterAPI(
+          paymasterDetails.url,
+          paymasterDetails.paymasterServiceData ?? ({} as any),
+        );
+        this.etherspotWallet.setPaymasterApi(biconomyPaymasterAPI);
+      }
     } else this.etherspotWallet.setPaymasterApi(null);
 
     const tx: TransactionDetailsForUserOp = {
