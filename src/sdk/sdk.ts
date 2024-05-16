@@ -157,6 +157,10 @@ export class PrimeSdk {
     return this.etherspotWallet.getCounterFactualAddress();
   }
 
+  async getAccountInitCode(): Promise<string> {
+    return this.etherspotWallet.getAccountInitCode();
+  }
+
   async estimate(params: {
     paymasterDetails?: PaymasterApi,
     gasDetails?: TransactionGasInfoForUserOp,
