@@ -10,13 +10,13 @@ async function main() {
   const privateKey = process.env.WALLET_PRIVATE_KEY;
 
   const recipient = '0x33F3Bd580C061A1e8bF543a215907699B13BB9ec'; // recipient wallet address
-  const chainId = 888888888;
-  const TOKEN_ADDRESS = '0x97423A68BAe94b5De52d767a17aBCc54c157c0E5';
-  const PAYMASTER_ADDRESS = '0xa056CC60088CEfba94d9e16d5408459039FA8D64';
+  // const chainId = 888888888;
+  // const TOKEN_ADDRESS = '0x97423A68BAe94b5De52d767a17aBCc54c157c0E5';
+  // const PAYMASTER_ADDRESS = '0xa056CC60088CEfba94d9e16d5408459039FA8D64';
 
-  // const chainId = 28122024;
-  // const TOKEN_ADDRESS = '0x453478E2E0c846c069e544405d5877086960BEf2';
-  // const PAYMASTER_ADDRESS = '0xe85649152D15825F2226B2d9C49c07b1cd2b36C7';
+  const chainId = 28122024;
+  const TOKEN_ADDRESS = '0x453478E2E0c846c069e544405d5877086960BEf2';
+  const PAYMASTER_ADDRESS = '0xe85649152D15825F2226B2d9C49c07b1cd2b36C7';
 
   const value = '0'; // transfer value
   const primeSdk = new PrimeSdk(
