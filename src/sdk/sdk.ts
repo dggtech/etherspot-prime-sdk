@@ -5,11 +5,11 @@ import {
   isWalletConnectProvider,
   isWalletProvider,
   WalletConnect2WalletProvider,
-  WalletProviderLike
+  WalletProviderLike,
 } from './wallet';
 import { Factory, PaymasterApi, PaymasterType, SdkOptions } from './interfaces';
-import { Network } from "./network";
-import { BatchUserOpsRequest, Exception, getGasFee, onRampApiKey, openUrl, UserOpsRequest } from "./common";
+import { Network } from './network';
+import { BatchUserOpsRequest, Exception, getGasFee, onRampApiKey, openUrl, UserOpsRequest } from './common';
 import { BigNumber, BigNumberish, ethers, providers, TypedDataField } from 'ethers';
 import { Networks, onRamperAllNetworks } from './network/constants';
 import { UserOperationStruct } from './contracts/account-abstraction/contracts/core/BaseAccount';
@@ -21,6 +21,7 @@ import { SimpleAccountAPI } from './base/SimpleAccountWalletAPI';
 import { ErrorHandler } from './errorHandler/errorHandler.service';
 import { EtherspotBundler } from './bundler';
 import { BiconomyPaymasterAPI } from './base/BiconomyPaymasterAPI';
+import { BiconomyV1WalletAPI } from './base/BiconomyV1WalletAPI';
 
 /**
  * Prime-Sdk
@@ -28,8 +29,7 @@ import { BiconomyPaymasterAPI } from './base/BiconomyPaymasterAPI';
  * @category Prime-Sdk
  */
 export class PrimeSdk {
-
-  private etherspotWallet: EtherspotWalletAPI | ZeroDevWalletAPI | SimpleAccountAPI;
+  private etherspotWallet: EtherspotWalletAPI | ZeroDevWalletAPI | SimpleAccountAPI | BiconomyV1WalletAPI;
   private bundler: HttpRpcClient;
   private chainId: number;
   private factoryUsed: Factory;
@@ -38,7 +38,6 @@ export class PrimeSdk {
   private userOpsBatch: BatchUserOpsRequest = { to: [], data: [], value: [] };
 
   constructor(walletProvider: WalletProviderLike, optionsLike: SdkOptions) {
-
     let walletConnectProvider;
     if (isWalletConnectProvider(walletProvider)) {
       walletConnectProvider = new WalletConnect2WalletProvider(walletProvider as EthereumProvider);
@@ -46,12 +45,7 @@ export class PrimeSdk {
       throw new Exception('Invalid wallet provider');
     }
 
-    const {
-      index,
-      chainId,
-      rpcProviderUrl,
-      accountAddress,
-    } = optionsLike;
+    const { index, chainId, rpcProviderUrl, accountAddress } = optionsLike;
 
     this.chainId = chainId;
     this.index = index ?? 0;
@@ -68,18 +62,20 @@ export class PrimeSdk {
       provider = new providers.JsonRpcProvider(rpcProviderUrl);
     } else provider = new providers.JsonRpcProvider(optionsLike.bundlerProvider.url);
 
-    let entryPointAddress = '', walletFactoryAddress = '';
+    let entryPointAddress = '',
+      walletFactoryAddress = '';
     if (Networks[chainId]) {
       entryPointAddress = Networks[chainId].contracts.entryPoint;
-      if (Networks[chainId].contracts.walletFactory[this.factoryUsed] == '') throw new Exception('The selected factory is not deployed in the selected chain_id')
+      if (Networks[chainId].contracts.walletFactory[this.factoryUsed] == '')
+        throw new Exception('The selected factory is not deployed in the selected chain_id');
       walletFactoryAddress = Networks[chainId].contracts.walletFactory[this.factoryUsed];
     }
 
     if (optionsLike.entryPointAddress) entryPointAddress = optionsLike.entryPointAddress;
     if (optionsLike.walletFactoryAddress) walletFactoryAddress = optionsLike.walletFactoryAddress;
 
-    if (entryPointAddress == '') throw new Exception('entryPointAddress not set on the given chain_id')
-    if (walletFactoryAddress == '') throw new Exception('walletFactoryAddress not set on the given chain_id')
+    if (entryPointAddress == '') throw new Exception('entryPointAddress not set on the given chain_id');
+    if (walletFactoryAddress == '') throw new Exception('walletFactoryAddress not set on the given chain_id');
 
     if (this.factoryUsed === Factory.ZERO_DEV) {
       this.etherspotWallet = new ZeroDevWalletAPI({
@@ -89,7 +85,7 @@ export class PrimeSdk {
         entryPointAddress,
         factoryAddress: walletFactoryAddress,
         index: this.index,
-      })
+      });
     } else if (this.factoryUsed === Factory.SIMPLE_ACCOUNT) {
       this.etherspotWallet = new SimpleAccountAPI({
         provider,
@@ -98,9 +94,17 @@ export class PrimeSdk {
         entryPointAddress,
         factoryAddress: walletFactoryAddress,
         index: this.index,
-      })
-    }
-    else {
+      });
+    } else if (this.factoryUsed === Factory.BICONOMY_V1) {
+      this.etherspotWallet = new BiconomyV1WalletAPI({
+        provider,
+        walletProvider: walletConnectProvider ?? walletProvider,
+        optionsLike,
+        entryPointAddress,
+        factoryAddress: walletFactoryAddress,
+        index: this.index,
+      });
+    } else {
       this.etherspotWallet = new EtherspotWalletAPI({
         provider,
         walletProvider: walletConnectProvider ?? walletProvider,
@@ -109,12 +113,10 @@ export class PrimeSdk {
         factoryAddress: walletFactoryAddress,
         predefinedAccountAddress: accountAddress,
         index: this.index,
-      })
+      });
     }
     this.bundler = new HttpRpcClient(optionsLike.bundlerProvider.url, entryPointAddress, chainId);
-
   }
-
 
   // exposes
   get state(): StateService {
@@ -161,20 +163,24 @@ export class PrimeSdk {
     return this.etherspotWallet.getAccountInitCode();
   }
 
-  async estimate(params: {
-    paymasterDetails?: PaymasterApi,
-    gasDetails?: TransactionGasInfoForUserOp,
-    callGasLimit?: BigNumberish,
-    key?: number
-  } = {}) {
+  async estimate(
+    params: {
+      paymasterDetails?: PaymasterApi;
+      gasDetails?: TransactionGasInfoForUserOp;
+      callGasLimit?: BigNumberish;
+      key?: number;
+    } = {},
+  ) {
     const { paymasterDetails, gasDetails, callGasLimit, key } = params;
-    let dummySignature = "0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c";
+    let dummySignature =
+      '0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c';
 
     /**
      * Dummy signature used only in the case of zeroDev factory contract
      */
     if (this.factoryUsed === Factory.ZERO_DEV) {
-      dummySignature = "0x00000000870fe151d548a1c527c3804866fab30abf28ed17b79d5fc5149f19ca0819fefc3c57f3da4fdf9b10fab3f2f3dca536467ae44943b9dbb8433efe7760ddd72aaa1c"
+      dummySignature =
+        '0x00000000870fe151d548a1c527c3804866fab30abf28ed17b79d5fc5149f19ca0819fefc3c57f3da4fdf9b10fab3f2f3dca536467ae44943b9dbb8433efe7760ddd72aaa1c';
     }
 
     if (this.userOpsBatch.to.length < 1) {
@@ -204,15 +210,18 @@ export class PrimeSdk {
       data: this.userOpsBatch.data,
       dummySignature: dummySignature,
       ...gasDetails,
-    }
+    };
 
-    const gasInfo = await this.getGasFee()
+    const gasInfo = await this.getGasFee();
 
-    const partialtx = await this.etherspotWallet.createUnsignedUserOp({
-      ...tx,
-      maxFeePerGas: gasInfo.maxFeePerGas,
-      maxPriorityFeePerGas: gasInfo.maxPriorityFeePerGas,
-    }, key);
+    const partialtx = await this.etherspotWallet.createUnsignedUserOp(
+      {
+        ...tx,
+        maxFeePerGas: gasInfo.maxFeePerGas,
+        maxPriorityFeePerGas: gasInfo.maxPriorityFeePerGas,
+      },
+      key,
+    );
 
     if (callGasLimit) {
       partialtx.callGasLimit = BigNumber.from(callGasLimit).toHexString();
@@ -237,22 +246,21 @@ export class PrimeSdk {
 
     if (bundlerGasEstimate.preVerificationGas) {
       partialtx.preVerificationGas = BigNumber.from(bundlerGasEstimate.preVerificationGas);
-      partialtx.verificationGasLimit = BigNumber.from(bundlerGasEstimate.verificationGasLimit ?? bundlerGasEstimate.verificationGas);
+      partialtx.verificationGasLimit = BigNumber.from(
+        bundlerGasEstimate.verificationGasLimit ?? bundlerGasEstimate.verificationGas,
+      );
       const expectedCallGasLimit = BigNumber.from(bundlerGasEstimate.callGasLimit);
-      if (!callGasLimit)
-        partialtx.callGasLimit = expectedCallGasLimit;
+      if (!callGasLimit) partialtx.callGasLimit = expectedCallGasLimit;
       else if (BigNumber.from(callGasLimit).lt(expectedCallGasLimit))
         throw new ErrorHandler(`CallGasLimit is too low. Expected atleast ${expectedCallGasLimit.toString()}`);
     }
 
     return partialtx;
-
   }
 
   async getGasFee() {
     const version = await this.bundler.getBundlerVersion();
-    if (version && version.includes('skandha'))
-      return this.bundler.getSkandhaGasPrice();
+    if (version && version.includes('skandha')) return this.bundler.getSkandhaGasPrice();
     return getGasFee(this.etherspotWallet.provider as providers.JsonRpcProvider);
   }
 
@@ -261,10 +269,7 @@ export class PrimeSdk {
     return this.bundler.sendUserOpToBundler(signedUserOp);
   }
 
-  async signTypedData(
-    DataFields: TypedDataField[],
-    message: any
-  ) {
+  async signTypedData(DataFields: TypedDataField[], message: any) {
     return this.etherspotWallet.signTypedData(DataFields, message);
   }
 
@@ -284,11 +289,15 @@ export class PrimeSdk {
     return this.etherspotWallet.getUserOpHash(userOp);
   }
 
-  async addUserOpsToBatch(
-    tx: UserOpsRequest,
-  ): Promise<BatchUserOpsRequest> {
+  async addUserOpsToBatch(tx: UserOpsRequest): Promise<BatchUserOpsRequest> {
     if (!tx.data && !tx.value) throw new ErrorHandler('Data and Value both cannot be empty', 1);
-    if (tx.value && this.factoryUsed === Factory.SIMPLE_ACCOUNT && tx.value.toString() !== '0' && this.userOpsBatch.value.length > 0) throw new ErrorHandler('SimpleAccount: native transfers cant be part of batch', 1);
+    if (
+      tx.value &&
+      this.factoryUsed === Factory.SIMPLE_ACCOUNT &&
+      tx.value.toString() !== '0' &&
+      this.userOpsBatch.value.length > 0
+    )
+      throw new ErrorHandler('SimpleAccount: native transfers cant be part of batch', 1);
     this.userOpsBatch.to.push(tx.to);
     this.userOpsBatch.value.push(tx.value ?? BigNumber.from(0));
     this.userOpsBatch.data.push(tx.data ?? '0x');
@@ -317,11 +326,13 @@ export class PrimeSdk {
     else {
       const networks = params.onlyCryptoNetworks.split(',');
       for (const network in networks) {
-        if (!onRamperAllNetworks.includes(network)) throw new ErrorHandler('Included Networks which are not supported. Please Check', 1);
+        if (!onRamperAllNetworks.includes(network))
+          throw new ErrorHandler('Included Networks which are not supported. Please Check', 1);
       }
     }
 
-    const url = `https://buy.onramper.com/?networkWallets=ETHEREUM:${await this.getCounterFactualAddress()}` +
+    const url =
+      `https://buy.onramper.com/?networkWallets=ETHEREUM:${await this.getCounterFactualAddress()}` +
       `&apiKey=${onRampApiKey}` +
       `&onlyCryptoNetworks=${params.onlyCryptoNetworks}` +
       `${params.defaultCrypto ? `&defaultCrypto=${params.defaultCrypto}` : ``}` +
