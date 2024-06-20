@@ -14,6 +14,7 @@ export interface NetworkConfig {
       etherspot: string;
       zeroDev: string;
       simpleAccount: string;
+      biconomyV1: string;
     };
   };
-};
+}

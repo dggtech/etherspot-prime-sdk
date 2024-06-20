@@ -19,6 +19,7 @@ export enum Factory {
   ZERO_DEV = 'zeroDev',
   ETHERSPOT = 'etherspot',
   SIMPLE_ACCOUNT = 'simpleAccount',
+  BICONOMY_V1 = 'biconomyV1',
 }
 
 export interface SdkOptions {
