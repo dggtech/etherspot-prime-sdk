@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { EtherspotBundler, Factory, PrimeSdk } from '../src';
+import { EtherspotBundler, PrimeSdk } from '../src';
 import { printOp } from '../src/sdk/common/OperationUtils';
 import * as dotenv from 'dotenv';
 import { sleep } from '../src/sdk/common';
@@ -7,10 +7,25 @@ import { sleep } from '../src/sdk/common';
 dotenv.config();
 
 const recipient = '0x80a1874E1046B1cc5deFdf4D3153838B72fF94Ac'; // recipient wallet address
-const value = '0.0000001'; // transfer value
-const value2 = '0.0000002'; // transfer value
+const value = '0.00001'; // transfer value
 const bundlerApiKey =
   'eyJvcmciOiI2NTIzZjY5MzUwOTBmNzAwMDFiYjJkZWIiLCJpZCI6IjMxMDZiOGY2NTRhZTRhZTM4MGVjYjJiN2Q2NDMzMjM4IiwiaCI6Im11cm11cjEyOCJ9';
+
+async function addtoBatch(primeSdk: PrimeSdk, recipient: string, value: string) {
+  const transactionBatch = await primeSdk.addUserOpsToBatch({ to: recipient, value: ethers.utils.parseEther(value) });
+  console.log('transactions: ', transactionBatch);
+
+  const transactionBatch2 = await primeSdk.addUserOpsToBatch(
+    { to: recipient, value: ethers.utils.parseEther(value) },
+    transactionBatch,
+  );
+  console.log('transactionBatch2: ', transactionBatch2);
+
+  const op = await primeSdk.estimate({}, transactionBatch2);
+  console.log(`Estimate UserOp: ${await printOp(op)}`);
+
+  return op;
+}
 
 async function main() {
   // initializating sdk...
@@ -18,7 +33,6 @@ async function main() {
     { privateKey: process.env.WALLET_PRIVATE_KEY },
     {
       chainId: Number(process.env.CHAIN_ID),
-      factoryWallet: Factory.BICONOMY_V1,
       bundlerProvider: new EtherspotBundler(Number(process.env.CHAIN_ID), bundlerApiKey),
     },
   );
@@ -27,29 +41,18 @@ async function main() {
 
   // get address of EtherspotWallet...
   const address: string = await primeSdk.getCounterFactualAddress();
-  console.log('\x1b[33m%s\x1b[0m', `BiconomyV1 address: ${address}`);
-
-  // clear the transaction batch
-  await primeSdk.clearUserOpsFromBatch();
-
-  // add transactions to the batch
-  const transactionBatch = await primeSdk.addUserOpsToBatch({ to: recipient, value: ethers.utils.parseEther(value) });
-  console.log('transactions: ', transactionBatch);
-
-  const transactionBatch2 = await primeSdk.addUserOpsToBatch(
-    { to: recipient, value: ethers.utils.parseEther(value2) },
-    transactionBatch,
-  );
-  console.log('transactions2: ', transactionBatch2);
+  console.log('\x1b[33m%s\x1b[0m', `EtherspotWallet address: ${address}`);
 
   // get balance of the account address
   const balance = await primeSdk.getNativeBalance();
 
   console.log('balances: ', balance);
 
+  addtoBatch(primeSdk, recipient, value);
+  const op = await addtoBatch(primeSdk, recipient, value);
+  addtoBatch(primeSdk, recipient, value);
+
   // estimate transactions added to the batch and get the fee data for the UserOp
-  const op = await primeSdk.estimate({}, transactionBatch2);
-  console.log(`Estimate UserOp: ${await printOp(op)}`);
 
   // sign the UserOp and sending to the bundler...
   const uoHash = await primeSdk.send(op);
@@ -66,6 +69,5 @@ async function main() {
   console.log('\x1b[33m%s\x1b[0m', `Transaction Receipt: `, userOpsReceipt);
 }
 
-main()
-  .catch(console.error)
-  .finally(() => process.exit());
+main().catch(console.error);
+// .finally(() => process.exit());

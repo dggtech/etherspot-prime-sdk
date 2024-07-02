@@ -35,7 +35,7 @@ export class PrimeSdk {
   private factoryUsed: Factory;
   private index: number;
 
-  private userOpsBatch: BatchUserOpsRequest = { to: [], data: [], value: [] };
+  // private userOpsBatch: BatchUserOpsRequest = { to: [], data: [], value: [] };
 
   constructor(walletProvider: WalletProviderLike, optionsLike: SdkOptions) {
     let walletConnectProvider;
@@ -170,6 +170,7 @@ export class PrimeSdk {
       callGasLimit?: BigNumberish;
       key?: number;
     } = {},
+    userOpsBatch: BatchUserOpsRequest = { to: [], data: [], value: [] },
   ) {
     const { paymasterDetails, gasDetails, callGasLimit, key } = params;
     let dummySignature =
@@ -183,7 +184,7 @@ export class PrimeSdk {
         '0x00000000870fe151d548a1c527c3804866fab30abf28ed17b79d5fc5149f19ca0819fefc3c57f3da4fdf9b10fab3f2f3dca536467ae44943b9dbb8433efe7760ddd72aaa1c';
     }
 
-    if (this.userOpsBatch.to.length < 1) {
+    if (userOpsBatch.to.length < 1) {
       throw new ErrorHandler('cannot sign empty transaction batch', 1);
     }
 
@@ -205,9 +206,9 @@ export class PrimeSdk {
     } else this.etherspotWallet.setPaymasterApi(null);
 
     const tx: TransactionDetailsForUserOp = {
-      target: this.userOpsBatch.to,
-      values: this.userOpsBatch.value,
-      data: this.userOpsBatch.data,
+      target: userOpsBatch.to,
+      values: userOpsBatch.value,
+      data: userOpsBatch.data,
       dummySignature: dummySignature,
       ...gasDetails,
     };
@@ -289,25 +290,28 @@ export class PrimeSdk {
     return this.etherspotWallet.getUserOpHash(userOp);
   }
 
-  async addUserOpsToBatch(tx: UserOpsRequest): Promise<BatchUserOpsRequest> {
+  async addUserOpsToBatch(
+    tx: UserOpsRequest,
+    userOpsBatch: BatchUserOpsRequest = { to: [], data: [], value: [] },
+  ): Promise<BatchUserOpsRequest> {
     if (!tx.data && !tx.value) throw new ErrorHandler('Data and Value both cannot be empty', 1);
     if (
       tx.value &&
       this.factoryUsed === Factory.SIMPLE_ACCOUNT &&
       tx.value.toString() !== '0' &&
-      this.userOpsBatch.value.length > 0
+      userOpsBatch.value.length > 0
     )
       throw new ErrorHandler('SimpleAccount: native transfers cant be part of batch', 1);
-    this.userOpsBatch.to.push(tx.to);
-    this.userOpsBatch.value.push(tx.value ?? BigNumber.from(0));
-    this.userOpsBatch.data.push(tx.data ?? '0x');
-    return this.userOpsBatch;
+    userOpsBatch.to.push(tx.to);
+    userOpsBatch.value.push(tx.value ?? BigNumber.from(0));
+    userOpsBatch.data.push(tx.data ?? '0x');
+    return userOpsBatch;
   }
 
   async clearUserOpsFromBatch(): Promise<void> {
-    this.userOpsBatch.to = [];
-    this.userOpsBatch.data = [];
-    this.userOpsBatch.value = [];
+    // this.userOpsBatch.to = [];
+    // this.userOpsBatch.data = [];
+    // this.userOpsBatch.value = [];
   }
 
   async getAccountContract() {
