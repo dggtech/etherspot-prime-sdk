@@ -9,7 +9,7 @@ dotenv.config();
 
 // add/change these values
 const recipient = '0x80a1874E1046B1cc5deFdf4D3153838B72fF94Ac'; // recipient wallet address
-const value = '0.001'; // transfer value
+const value = '0.000001'; // transfer value
 const tokenAddress = '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9';
 const bundlerApiKey =
   'eyJvcmciOiI2NTIzZjY5MzUwOTBmNzAwMDFiYjJkZWIiLCJpZCI6IjMxMDZiOGY2NTRhZTRhZTM4MGVjYjJiN2Q2NDMzMjM4IiwiaCI6Im11cm11cjEyOCJ9';
@@ -53,7 +53,7 @@ async function main() {
   console.log('transactions: ', userOpsBatch);
 
   // estimate transactions added to the batch and get the fee data for the UserOp
-  const op = await primeSdk.estimate();
+  const op = await primeSdk.estimate({}, userOpsBatch);
   console.log(`Estimate UserOp: ${await printOp(op)}`);
 
   // sign the UserOp and sending to the bundler...
