@@ -1,10 +1,8 @@
 import { BigNumber, BigNumberish, Contract, ethers } from 'ethers';
-import { arrayify, hexConcat, getAddress } from 'ethers/lib/utils';
+import { arrayify, hexConcat } from 'ethers/lib/utils';
 import { BaseApiParams, BaseAccountAPI } from './BaseAccountAPI';
 import { BiconomyV1Abi } from '../contracts/BiconomyV1/BiconomyV1Abi';
 import { BiconomyV1FactoryAbi } from '../contracts/BiconomyV1/BiconomyV1FactoryAbi';
-import NodeClient, { ISmartAccount, SmartAccountByOwnerDto, SmartAccountsResponse } from '@biconomy/node-client';
-import { BICONOMY_NODE_CLIENT_URL } from '../common';
 
 /**
  * constructor params, added no top of base params:
@@ -38,17 +36,10 @@ export class BiconomyV1WalletAPI extends BaseAccountAPI {
 
   factory?: Contract;
 
-  nodeClient?: NodeClient;
-
   constructor(params: BiconomyV1WalletApiParams) {
     super(params);
     this.factoryAddress = params.factoryAddress;
     this.index = params.index ?? 0;
-    this.nodeClient = new NodeClient({ txServiceUrl: BICONOMY_NODE_CLIENT_URL });
-  }
-
-  async getSmartAccountsByOwner(smartAccountByOwnerDto: SmartAccountByOwnerDto): Promise<SmartAccountsResponse> {
-    return this.nodeClient.getSmartAccountsByOwner(smartAccountByOwnerDto);
   }
 
   async _getAccountContract(): Promise<Contract> {
@@ -65,38 +56,6 @@ export class BiconomyV1WalletAPI extends BaseAccountAPI {
         this.index,
       ]),
     ]);
-  }
-
-  async getCounterFactualAddress(): Promise<string> {
-    if (!this.accountAddress) {
-      try {
-        let smartAccountsList: ISmartAccount[] = (
-          await this.getSmartAccountsByOwner({
-            chainId: this.services.networkService.chainId,
-            owner: this.services.walletService.EOAAddress,
-            index: this.index,
-          })
-        ).data;
-        if (!smartAccountsList)
-          throw new Error(
-            'Failed to get smart account address. Please raise an issue on https://github.com/bcnmy/biconomy-client-sdk for further investigation.',
-          );
-        smartAccountsList = smartAccountsList.filter((smartAccount: ISmartAccount) => {
-          return this.index === smartAccount.index;
-        });
-        if (smartAccountsList.length === 0)
-          throw new Error(
-            'Failed to get smart account address. Please raise an issue on https://github.com/bcnmy/biconomy-client-sdk for further investigation.',
-          );
-        const smartAccountInfo = smartAccountsList[0];
-        // this.accountAddress = smartAccountInfo.smartAccountAddress
-        this.accountAddress = getAddress(smartAccountInfo.smartAccountAddress);
-      } catch (error) {
-        console.error(`Failed to get smart account address: ${error}`);
-        throw error;
-      }
-    }
-    return this.accountAddress;
   }
 
   async getNonce(key = 0): Promise<BigNumber> {
