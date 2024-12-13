@@ -482,8 +482,8 @@ export const Networks: {
         zeroDev: '',
         simpleAccount: '',
         biconomyV1: '',
-      }
-    }
+      },
+    },
   },
   [421614]: {
     chainId: 421614,
@@ -494,7 +494,8 @@ export const Networks: {
         etherspot: '0x7f6d8F107fE8551160BD5351d5F1514A6aD5d40E',
         zeroDev: '',
         simpleAccount: '',
-      }
+        biconomyV1: '',
+      },
     },
   },
 };
